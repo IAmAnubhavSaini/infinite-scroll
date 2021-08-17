@@ -4,17 +4,20 @@ import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import {Image, PhotosProps} from '../lib/app.types';
-import {Stack} from '@material-ui/core';
+import {Modal, Stack, Typography} from '@material-ui/core';
+import Preview from "./Preview";
 
 const ImageContainer = styled(Paper)(({theme}) => ({
     ...theme.typography.body2,
     padding: theme.spacing(2),
     textAlign: 'center',
     color: theme.palette.text.secondary,
-
 }));
 
+
 function Photos(props: PhotosProps) {
+
+
     const {photos} = props;
     const stacks = [
         photos.filter((_, i: number) => i % 4 === 0),
@@ -31,13 +34,10 @@ function Photos(props: PhotosProps) {
                             <Stack spacing={2} key={`photos-stack-${stackIndex}`}>
                                 {images.map((photo: Image, index: number) => {
                                     return (
-                                        <ImageContainer key={`image-container-${index}`}>
-                                            <img src={photo.url.small}
-                                                 alt={photo.alt}
-                                                 title={`${photo.title} at ${photo.url.small}`}
-                                                 style={{width: '100%'}}
-                                            />
-                                        </ImageContainer>
+                                        <Photo
+                                            photo={photo}
+                                            index={index}
+                                        />
                                     );
                                 })}
                             </Stack>
@@ -45,8 +45,35 @@ function Photos(props: PhotosProps) {
                     );
                 })}
             </Grid>
+
         </Box>
     );
 }
 
 export default Photos;
+
+function Photo(props: any) {
+    const [open, setOpen] = React.useState(false);
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+    const {photo, index} = props;
+    return (
+        <ImageContainer key={`image-container-${index}`}>
+            <img src={photo.url.small}
+                 alt={photo.alt}
+                 title={`${photo.title} at ${photo.url.small}`}
+                 style={{width: '100%'}}
+                 onClick={handleOpen}
+            />
+            {open &&
+            <Preview
+                open={open}
+                handleClose={handleClose}
+                alt={photo.alt}
+                url={photo.url.medium}
+                title={photo.title}
+            />
+            }
+        </ImageContainer>
+    );
+}
