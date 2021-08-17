@@ -1,0 +1,34 @@
+.App {
+    padding-bottom: 200px;
+    margin-bottom: 200px;
+}
+
+.search-autocomplete input, .search-autocomplete label {
+    color: white;
+}
+
+.search-autocomplete fieldset {
+    border: none;
+}
+
+.topbar-box {
+    margin-bottom: 100px;
+}
+
+.cookie-consent-container,
+.viewers-warning-container {
+    margin: 0 1rem;
+    padding: 0 1rem;
+    font-weight: bold;
+}
+
+.cookie-consent-container .button-container,
+.viewers-warning-container .button-container {
+    padding: 1rem 0;
+    background-color: white;
+}
+
+.cookie-consent-container .button-container Button,
+.viewers-warning-container .button-container Button {
+    margin: 0 1rem;
+}
