@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {Alert, AlertTitle, Button} from "@material-ui/core";
+import {Alert, AlertTitle, Button} from "@mui/material";
 import {useViewersWarning} from "../lib/localStorage.hooks";
 
 function ViewersWarning() {
@@ -27,10 +27,10 @@ function ViewersWarning() {
                 <br/>
                 Continue only if you are okay with this.
                 <div className="button-container">
-                    <Button variant="contained" color="success" onClick={handleAccept}>
+                    <Button variant="contained" color={"error"} onClick={handleAccept}>
                         I understand. Let me continue to app anyway.
                     </Button>
-                    <Button variant="outlined" color="error" onClick={handleClose}>
+                    <Button variant="outlined" color={"error"} onClick={handleClose}>
                         Close the browser tab/window.
                     </Button>
                 </div>

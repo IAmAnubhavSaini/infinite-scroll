@@ -1,8 +1,9 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {debounce} from "@material-ui/core";
 
 function useScroll() {
     const [scrollTop, setScrollTop] = useState(0);
+    const maxScroll = useRef(scrollTop);
     const [scrollHeight, setScrollHeight] = useState(document.documentElement.scrollHeight);
 
 
@@ -10,8 +11,10 @@ function useScroll() {
         const onScroll = () => {
             const st = document.documentElement.scrollTop;
             const sh = document.documentElement.scrollHeight;
-            setScrollTop(st);
-            setScrollHeight(sh);
+            if (maxScroll.current < st) {
+                setScrollTop(st);
+                setScrollHeight(sh);
+            }
         };
 
         const debounced = debounce(onScroll, 400)

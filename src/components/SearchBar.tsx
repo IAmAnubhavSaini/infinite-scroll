@@ -1,11 +1,10 @@
 import {
     Autocomplete,
     AutocompleteChangeReason,
-    AutocompleteCloseReason,
     AutocompleteInputChangeReason,
     debounce,
     TextField
-} from "@material-ui/core";
+} from "@mui/material";
 import {SearchBarProps} from "../lib/app.types";
 import {SyntheticEvent} from "react";
 
@@ -26,10 +25,10 @@ function SearchBar(props: SearchBarProps) {
         }
     }
 
-    function handleClose(e: SyntheticEvent<Element, Event>, r: AutocompleteCloseReason) {
-        console.log('closed');
-        props.deactivateSearch();
-    }
+    // function handleClose(e: SyntheticEvent<Element, Event>, r: AutocompleteCloseReason) {
+    //     console.log('closed');
+    //     props.deactivateSearch();
+    // }
 
     return (
         <Autocomplete

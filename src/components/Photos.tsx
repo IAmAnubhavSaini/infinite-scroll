@@ -4,7 +4,7 @@ import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import {Image, PhotosProps} from '../lib/app.types';
-import {Modal, Stack, Typography} from '@material-ui/core';
+import {Stack} from '@mui/material';
 import Preview from "./Preview";
 
 const ImageContainer = styled(Paper)(({theme}) => ({

@@ -1,4 +1,4 @@
-import {Alert, AlertTitle, Button} from "@material-ui/core";
+import {Alert, AlertTitle, Button} from "@mui/material";
 import {useCookiesConsent} from "../lib/localStorage.hooks";
 import {useState} from "react";
 

@@ -1,4 +1,4 @@
-import {AppBar, Box, Link, Toolbar, Typography} from "@material-ui/core";
+import {AppBar, Box, Link, Toolbar, Typography} from "@mui/material";
 import {SearchBar} from "./SearchBar";
 import {TopBarProps} from "../lib/app.types";
 

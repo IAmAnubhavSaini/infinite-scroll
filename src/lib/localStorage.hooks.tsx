@@ -1,3 +1,5 @@
+import {useCallback} from "react";
+
 const SEARCH_TERMS_KEY = 'SEARCH_TERMS';
 const COOKIES_CONSENT_KEY = 'COOKIES_CONSENT';
 const COOKIES_CONSENT_ACCEPTED = 'cookie_consent_accepted';
@@ -82,11 +84,11 @@ function useCookiesConsent() {
 }
 
 function useSearchTerms() {
-    function saveSearchTerm(searchTerm: string) {
+    const saveSearchTerm =  useCallback(function (searchTerm: string) {
         if (searchTerm && searchTerm.length >= 3) {
             append<string>(SEARCH_TERMS_KEY, searchTerm);
         }
-    }
+    }, []);
 
     function fetchSearchTerms(): string[] {
         return JSON.parse(localStorage.getItem(SEARCH_TERMS_KEY) as string);
