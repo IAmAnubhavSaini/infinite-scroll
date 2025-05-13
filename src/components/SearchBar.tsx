@@ -1,5 +1,5 @@
 import { SearchBarProps } from "../lib/app.types";
-import { SyntheticEvent, useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { debounce } from "../lib/debounce";
 
 function SearchBar(props: SearchBarProps) {
