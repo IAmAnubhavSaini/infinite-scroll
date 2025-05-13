@@ -1,16 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
 import { cspConfig, securityHeaders } from './src/lib/security.config';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
   base: '/infinite-scroll/',
   server: {
     headers: {
@@ -26,8 +20,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          material: ['@material-ui/core', '@material-ui/icons', '@mui/material']
+          vendor: ['react', 'react-dom']
         }
       }
     }

@@ -1,7 +1,6 @@
 import React, {useEffect, useState, useCallback, useRef} from 'react';
-import CssBaseline from '@material-ui/core/CssBaseline';
-// import initialData from './photos.data.json';
 import './styles/App.css';
+import './styles/components.css';
 import {GlobalAppState} from "./lib/app.types";
 import {photosToImages} from "./lib/photo.utils";
 import Photos from "./components/Photos";
@@ -9,12 +8,11 @@ import {TopBar} from './components/TopBar';
 import {useSearchTerms} from "./lib/localStorage.hooks";
 import {recentApi, searchApi} from "./lib/flickr.apis";
 import {FlickrApiResponse} from "./lib/flickr.types";
-import {CircularProgress} from "@material-ui/core";
 import {CookieConsent} from "./components/CookieConsent";
 import ViewersWarning from "./components/ViewersWarning";
 import {useScroll} from "./lib/scroll.hooks";
 import ErrorBoundary from './components/ErrorBoundary';
-import debounce from 'lodash/debounce';
+import {debounce} from './lib/debounce';
 
 const defaultState: GlobalAppState = {
     isLoading: true,
@@ -34,54 +32,93 @@ const defaultState: GlobalAppState = {
 
 function App() {
     const [appState, setAppState] = useState(defaultState);
-    const isLoadingRef = useRef(false); // Use ref to track loading state without causing rerenders
+    const isLoadingRef = useRef(false);
     const currentPageRef = useRef(1);
-    // const photos = photosToImages(initialData.photos.photo);
     const {saveSearchTerm, fetchSearchTerms} = useSearchTerms();
     const {shouldLoadMore, resetTrigger} = useScroll(0.8);
 
-    // Debounced search function
+    const deactivateSearch = useCallback(() => {
+        setAppState(state => ({
+            ...state, 
+            isInSearch: false, 
+            isInRecent: true,
+            searchPhotos: [],
+            currentSearchTerm: '',
+            hasError: false,
+            error: undefined
+        }));
+        resetTrigger();
+    }, [resetTrigger]);
+
+    // Debounced search function with improved error handling
     const debouncedSearch = useCallback(
-        debounce((searchTerm: string) => {
-            if (!searchTerm) return;
+        debounce(async (searchTerm: string) => {
+            if (!searchTerm?.trim()) {
+                setAppState(s => ({
+                    ...s,
+                    isLoading: false,
+                    searchPhotos: [],
+                    isInSearch: false,
+                    isInRecent: true
+                }));
+                return;
+            }
 
             try {
                 const apiUrl = searchApi(searchTerm);
-                fetch(apiUrl)
-                    .then(res => {
-                        if (!res.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return res.json();
-                    })
-                    .then((data: FlickrApiResponse) => {
-                        setAppState(s => ({
-                            ...s,
-                            isLoading: false,
-                            searchPhotos: photosToImages(data.photos.photo),
-                            isInSearch: true,
-                            isInRecent: false
-                        }));
-                    })
-                    .catch(e => {
-                        setAppState(s => ({
-                            ...s,
-                            error: e,
-                            hasError: true,
-                            isLoading: false
-                        }));
-                    });
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.status}`);
+                }
+
+                const data: FlickrApiResponse = await response.json();
+                
+                if (!data?.photos?.photo) {
+                    throw new Error('Invalid response format from Flickr API');
+                }
+
+                setAppState(s => ({
+                    ...s,
+                    isLoading: false,
+                    searchPhotos: photosToImages(data.photos.photo),
+                    isInSearch: true,
+                    isInRecent: false,
+                    hasError: false,
+                    error: undefined
+                }));
             } catch (e) {
+                console.error('Search error:', e);
                 setAppState(s => ({
                     ...s,
                     error: e as Error,
                     hasError: true,
-                    isLoading: false
+                    isLoading: false,
+                    searchPhotos: []
                 }));
             }
         }, 300),
         []
     );
+
+    const activateSearch = useCallback((searchTerm: string) => {
+        if (!searchTerm?.trim()) {
+            deactivateSearch();
+            return;
+        }
+
+        saveSearchTerm(searchTerm);
+        setAppState(state => ({
+            ...state,
+            isLoading: true,
+            isInSearch: true,
+            isInRecent: false,
+            currentSearchTerm: searchTerm,
+            hasError: false,
+            error: undefined
+        }));
+        debouncedSearch(searchTerm);
+    }, [saveSearchTerm, debouncedSearch, deactivateSearch]);
 
     // This function is for subsequent loading during scroll
     const fetchRecentFromNetwork = useCallback((page: number, perPage: number) => {
@@ -157,13 +194,13 @@ function App() {
         setAppState(state => ({...state, searchTerms}));
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Effect to update search terms
+    // Effect to update search terms - only when search terms are saved
     useEffect(() => {
-        if (appState.isInSearch) {
-            const st = fetchSearchTerms() || [];
+        const st = fetchSearchTerms() || [];
+        if (appState.isInSearch && JSON.stringify(st) !== JSON.stringify(appState.searchTerms)) {
             setAppState(state => ({...state, searchTerms: st}));
         }
-    }, [appState.isInSearch, fetchSearchTerms]);
+    }, [appState.isInSearch]); // Remove fetchSearchTerms from dependencies
 
     // Effect to handle infinite scroll
     useEffect(() => {
@@ -172,58 +209,40 @@ function App() {
         }
     }, [shouldLoadMore, appState.isInRecent, appState.perPage, fetchRecentFromNetwork]);
 
-    const activateSearch = useCallback((searchTerm: string) => {
-        if (searchTerm) {
-            saveSearchTerm(searchTerm);
-            setAppState(state => ({
-                ...state,
-                isLoading: true,
-                isInSearch: true,
-                isInRecent: false,
-                currentSearchTerm: searchTerm
-            }));
-            debouncedSearch(searchTerm);
-        }
-    }, [saveSearchTerm, debouncedSearch]);
-
-    const deactivateSearch = useCallback(() => {
-        setAppState(state => ({
-            ...state, 
-            isInSearch: false, 
-            isInRecent: true
-        }));
-        // Reset the scroll trigger when switching back to recent view
-        resetTrigger();
-    }, [resetTrigger]);
-
     return (
         <ErrorBoundary>
-            <React.Fragment>
-                <CssBaseline/>
-                <div className="App">
-                    <TopBar searchProps={{
-                        isInSearch: appState.isInSearch,
-                        searchTerms: appState.searchTerms,
-                        searchPhotos: appState.searchPhotos,
-                        activateSearch,
-                        deactivateSearch,
-                        currentSearchTerm: appState.currentSearchTerm
-                    }}/>
-                    <CookieConsent/>
-                    <ViewersWarning/>
-                    {!appState.isInSearch && appState.isInRecent && (
-                        <ErrorBoundary>
-                            <Photos photos={appState.recentPhotos}/>
-                        </ErrorBoundary>
-                    )}
-                    {appState.isInSearch && !appState.isInRecent && (
-                        <ErrorBoundary>
-                            <Photos photos={appState.searchPhotos}/>
-                        </ErrorBoundary>
-                    )}
-                    {appState.isLoading && <CircularProgress/>}
-                </div>
-            </React.Fragment>
+            <div className="App">
+                <TopBar searchProps={{
+                    isInSearch: appState.isInSearch,
+                    searchTerms: appState.searchTerms,
+                    searchPhotos: appState.searchPhotos,
+                    activateSearch,
+                    deactivateSearch,
+                    currentSearchTerm: appState.currentSearchTerm
+                }}/>
+                <CookieConsent/>
+                <ViewersWarning/>
+                {appState.hasError && (
+                    <div className="error-message">
+                        Error: {appState.error?.message || 'Something went wrong'}
+                    </div>
+                )}
+                {!appState.isInSearch && appState.isInRecent && (
+                    <ErrorBoundary>
+                        <Photos photos={appState.recentPhotos}/>
+                    </ErrorBoundary>
+                )}
+                {appState.isInSearch && !appState.isInRecent && (
+                    <ErrorBoundary>
+                        <Photos photos={appState.searchPhotos}/>
+                    </ErrorBoundary>
+                )}
+                {appState.isLoading && (
+                    <div className="loading-spinner">
+                        <div className="spinner"></div>
+                    </div>
+                )}
+            </div>
         </ErrorBoundary>
     );
 }

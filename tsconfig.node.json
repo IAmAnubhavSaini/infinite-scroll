@@ -4,7 +4,9 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ES2017", "DOM"]
   },
-  "include": ["vite.config.ts", "src/lib/security.config.ts"]
+  "include": ["vite.config.ts", "src/lib/security.config.ts"],
+  "exclude": []
 } 

@@ -1,4 +1,3 @@
-import {Alert, AlertTitle, Button} from "@mui/material";
 import {useCookiesConsent} from "../lib/localStorage.hooks";
 import {useState} from "react";
 
@@ -35,16 +34,18 @@ function CookieConsent() {
     return <div className="cookie-consent-container">
         {!accepted &&
         <div>
-            <Alert severity={rejected ? "warning" : "info"} variant="outlined">
-                <AlertTitle>Cookies Consent</AlertTitle>
-                We use necessary cookies, localStorage for site to function. — <strong>We don't track users or
-                behavior.</strong>
+            <div className={`alert ${rejected ? "alert-warning" : "alert-info"}`}>
+                <div className="alert-title">Cookies Consent</div>
+                <p>
+                    We use necessary cookies, localStorage for site to function. — <strong>We don't track users or
+                    behavior.</strong>
+                </p>
                 <div className="button-container">
-                    <Button variant="contained" color="success" onClick={onAcceptConsent}>Accept</Button>
-                    <Button onClick={onRejectConsent} variant="outlined" color="error">Reject</Button>
-                    <Button onClick={onClearConsent} variant="outlined">Clear consent</Button>
+                    <button className="btn btn-success" onClick={onAcceptConsent}>Accept</button>
+                    <button className="btn btn-error" onClick={onRejectConsent}>Reject</button>
+                    <button className="btn btn-outline" onClick={onClearConsent}>Clear consent</button>
                 </div>
-            </Alert>
+            </div>
         </div>
         }
     </div>;

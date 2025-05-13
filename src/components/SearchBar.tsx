@@ -1,15 +1,11 @@
-import {
-    Autocomplete,
-    AutocompleteChangeReason,
-    AutocompleteInputChangeReason,
-    TextField
-} from "@mui/material";
 import { SearchBarProps } from "../lib/app.types";
-import { SyntheticEvent, useCallback, useEffect, useRef } from "react";
+import { SyntheticEvent, useCallback, useState, useMemo } from "react";
 import { debounce } from "../lib/debounce";
 
 function SearchBar(props: SearchBarProps) {
-    const searchTerms = props.searchTerms.reverse();
+    const reversedSearchTerms = useMemo(() => [...props.searchTerms].reverse(), [props.searchTerms]);
+    const [showOptions, setShowOptions] = useState(false);
+    const [inputValue, setInputValue] = useState("");
 
     // Create a memoized debounced version of the search activation
     const debouncedSearch = useCallback(
@@ -23,40 +19,56 @@ function SearchBar(props: SearchBarProps) {
         [props.activateSearch, props.deactivateSearch, props.isInSearch]
     );
 
-    function handleInputChange(e: SyntheticEvent, v: string, r: AutocompleteInputChangeReason | AutocompleteChangeReason) {
-        if (r === 'input') {
-            debouncedSearch(v);
-        }
-        if (r === 'clear') {
-            props.deactivateSearch();
-        }
-        if (r === 'selectOption') {
-            // No debounce for direct selection - immediate execution
-            if (v.trim()) {
-                props.activateSearch(v);
-            }
-        }
+    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const value = e.target.value;
+        setInputValue(value);
+        setShowOptions(value.length > 0);
+        debouncedSearch(value);
     }
 
-    // function handleClose(e: SyntheticEvent<Element, Event>, r: AutocompleteCloseReason) {
-    //     console.log('closed');
-    //     props.deactivateSearch();
-    // }
+    function handleOptionSelect(value: string) {
+        setInputValue(value);
+        setShowOptions(false);
+        props.activateSearch(value);
+    }
+
+    function handleClear() {
+        setInputValue("");
+        setShowOptions(false);
+        props.deactivateSearch();
+    }
 
     return (
-        <Autocomplete
-            disablePortal={true}
-            className={"search-autocomplete"}
-            id="search-bar-input"
-            options={searchTerms}
-            sx={{width: 400}}
-            renderInput={(params) => <TextField {...params} label="Search"/>}
-            onInputChange={handleInputChange}
-            // onClose={handleClose}
-            noOptionsText={''}
-            onChange={(e, v, r) => handleInputChange(e, v as string, r)}
-            selectOnFocus={true}
-        />
+        <div className="search-container">
+            <div className="search-input-wrapper">
+                <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search"
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onFocus={() => setShowOptions(inputValue.length > 0)}
+                />
+                {inputValue && (
+                    <button className="clear-button" onClick={handleClear}>
+                        ×
+                    </button>
+                )}
+            </div>
+            {showOptions && reversedSearchTerms.length > 0 && (
+                <ul className="search-options">
+                    {reversedSearchTerms.map((term, index) => (
+                        <li
+                            key={`${term}-${index}`}
+                            onClick={() => handleOptionSelect(term)}
+                            className="search-option"
+                        >
+                            {term}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }
 

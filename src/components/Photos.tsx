@@ -1,18 +1,6 @@
 import * as React from 'react';
-import {styled} from '@material-ui/core/styles';
-import Box from '@material-ui/core/Box';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
 import {Image, PhotosProps} from '../lib/app.types';
-import {Stack} from '@mui/material';
 import Preview from "./Preview";
-
-const ImageContainer = styled(Paper)(({theme}) => ({
-    ...theme.typography.body2,
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-}));
 
 function Photos(props: PhotosProps) {
     const {photos} = props;
@@ -43,34 +31,30 @@ function Photos(props: PhotosProps) {
     };
 
     return (
-        <Box sx={{flexGrow: 1}}>
-            <Grid container spacing={2}>
-                {stacks.map((images: Image[], stackIndex: number) => {
-                    return (
-                        <Grid item xs={3} key={`photos-grid-${stackIndex}`}>
-                            <Stack spacing={2} key={`photos-stack-${stackIndex}`}>
-                                {images.map((photo: Image, index: number) => {
-                                    const globalIndex = index * 4 + stackIndex;
-                                    if (globalIndex >= visibleCount) return null;
+        <div className="photos-grid">
+            {stacks.map((images: Image[], stackIndex: number) => (
+                <div className="photos-column" key={`photos-column-${stackIndex}`}>
+                    <div className="photos-stack">
+                        {images.map((photo: Image, index: number) => {
+                            const globalIndex = index * 4 + stackIndex;
+                            if (globalIndex >= visibleCount) return null;
 
-                                    const photoKey = `photo-${stackIndex}-${index}-${photo.url.small.substring(photo.url.small.lastIndexOf('/') + 1)}`;
-                                    return (
-                                        <Photo
-                                            key={photoKey}
-                                            photo={photo}
-                                            index={index}
-                                            photoKey={photoKey}
-                                            onLoad={handleImageLoaded}
-                                            isVisible={globalIndex < visibleCount}
-                                        />
-                                    );
-                                })}
-                            </Stack>
-                        </Grid>
-                    );
-                })}
-            </Grid>
-        </Box>
+                            const photoKey = `photo-${stackIndex}-${index}-${photo.url.small.substring(photo.url.small.lastIndexOf('/') + 1)}`;
+                            return (
+                                <Photo
+                                    key={photoKey}
+                                    photo={photo}
+                                    index={index}
+                                    photoKey={photoKey}
+                                    onLoad={handleImageLoaded}
+                                    isVisible={globalIndex < visibleCount}
+                                />
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }
 
@@ -97,12 +81,12 @@ function Photo(props: PhotoProps) {
     if (!isVisible) return null;
     
     return (
-        <ImageContainer>
+        <div className="photo-container">
             <img 
                 src={photo.url.small}
                 alt={photo.alt}
                 title={`${photo.title} at ${photo.url.small}`}
-                style={{width: '100%'}}
+                className="photo-image"
                 onClick={handleOpen}
                 loading="lazy"
                 onLoad={handleImageLoad}
@@ -116,6 +100,6 @@ function Photo(props: PhotoProps) {
                 title={photo.title}
             />
             }
-        </ImageContainer>
+        </div>
     );
 }

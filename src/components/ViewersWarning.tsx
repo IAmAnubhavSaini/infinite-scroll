@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import {Alert, AlertTitle, Button} from "@mui/material";
 import {useViewersWarning} from "../lib/localStorage.hooks";
 
 function ViewersWarning() {
@@ -16,25 +15,28 @@ function ViewersWarning() {
         setAccepted(true);
         accept();
     };
+    
     return <div className="viewers-warning-container">
         {!accepted &&
         <div>
-            <Alert severity="error" variant="outlined">
-                <AlertTitle>Warning: Unfiltered content.</AlertTitle>
-                This application fetches images from public service.<br/>
-                People may choose to upload disturbing content, containing but not limited to:<br/>
-                <strong>sexual, child abuse, self-harm, gore, mutilation etc.</strong>
-                <br/>
-                Continue only if you are okay with this.
+            <div className="alert alert-error">
+                <div className="alert-title">Warning: Unfiltered content.</div>
+                <p>
+                    This application fetches images from public service.<br/>
+                    People may choose to upload disturbing content, containing but not limited to:<br/>
+                    <strong>sexual, child abuse, self-harm, gore, mutilation etc.</strong>
+                    <br/>
+                    Continue only if you are okay with this.
+                </p>
                 <div className="button-container">
-                    <Button variant="contained" color={"error"} onClick={handleAccept}>
+                    <button className="btn btn-error" onClick={handleAccept}>
                         I understand. Let me continue to app anyway.
-                    </Button>
-                    <Button variant="outlined" color={"error"} onClick={handleClose}>
+                    </button>
+                    <button className="btn btn-outline-error" onClick={handleClose}>
                         Close the browser tab/window.
-                    </Button>
+                    </button>
                 </div>
-            </Alert>
+            </div>
         </div>
         }
     </div>;
