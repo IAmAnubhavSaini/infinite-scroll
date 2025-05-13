@@ -9,7 +9,7 @@ import {TopBar} from './components/TopBar';
 import {useSearchTerms} from "./lib/localStorage.hooks";
 import {recentApi, searchApi} from "./lib/flickr.apis";
 import {FlickrApiResponse} from "./lib/flickr.types";
-import {CircularProgress, debounce} from "@material-ui/core";
+import {CircularProgress} from "@material-ui/core";
 import {CookieConsent} from "./components/CookieConsent";
 import ViewersWarning from "./components/ViewersWarning";
 import {useScroll} from "./lib/scroll.hooks";
@@ -72,8 +72,7 @@ function App() {
 
     useEffect(() => {
         if (appState.isInRecent) {
-            // debounce(() => fetchRecentFromNetwork(appState.page, appState.perPage), 100);
-            fetchRecentFromNetwork(appState.page, appState.perPage)
+            fetchRecentFromNetwork(appState.page, appState.perPage);
         }
     }, [scrollTop]);
 
