@@ -10,9 +10,9 @@ import { recentApi, searchApi } from "./lib/flickr.apis";
 import { FlickrApiResponse } from "./lib/flickr.types";
 import { CookieConsent } from "./components/CookieConsent";
 import ViewersWarning from "./components/ViewersWarning";
-import { useScroll } from "./lib/scroll.hooks";
+import { useScroll } from "./lib/scroll.hooks.js";
 import ErrorBoundary from './components/ErrorBoundary';
-import { debounce } from './lib/debounce';
+import { debounce } from './lib/debounce.js';
 
 const defaultState: GlobalAppState = {
     isLoading: true,

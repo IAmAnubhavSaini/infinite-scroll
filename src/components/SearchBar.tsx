@@ -1,6 +1,6 @@
 import { SearchBarProps } from "../lib/app.types";
 import { useCallback, useState, useMemo } from "react";
-import { debounce } from "../lib/debounce";
+import { debounce } from "../lib/debounce.js";
 
 function SearchBar(props: SearchBarProps) {
     const reversedSearchTerms = useMemo(() => [...props.searchTerms].reverse(), [props.searchTerms]);

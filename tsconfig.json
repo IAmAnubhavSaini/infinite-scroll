@@ -15,12 +15,16 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "./lib/*": ["src/lib/*"],
+      "../lib/*": ["src/lib/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["src/lib/security.config.ts"],

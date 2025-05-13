@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '24'
+          node-version: '24.0.1'
           cache: 'npm'
 
       - name: Install Dependencies
@@ -29,6 +29,17 @@ jobs:
           echo "VITE_FLICKR_API_KEY=${{ secrets.VITE_FLICKR_API_KEY }}" > .env
           echo "VITE_API_BASE_URL=https://api.flickr.com/services/rest/" >> .env
           echo "VITE_ENABLE_CSP=true" >> .env
+          
+      - name: Debug Files
+        run: |
+          echo "Node version:"
+          node -v
+          echo "NPM version:"
+          npm -v
+          echo "List src/lib directory:"
+          ls -la src/lib
+          echo "TypeScript version:"
+          npx tsc --version
 
       - name: Build
         run: npm run build
