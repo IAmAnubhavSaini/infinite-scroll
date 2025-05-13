@@ -2,26 +2,39 @@ import {
     Autocomplete,
     AutocompleteChangeReason,
     AutocompleteInputChangeReason,
-    debounce,
     TextField
 } from "@mui/material";
-import {SearchBarProps} from "../lib/app.types";
-import {SyntheticEvent} from "react";
+import { SearchBarProps } from "../lib/app.types";
+import { SyntheticEvent, useCallback, useEffect, useRef } from "react";
+import { debounce } from "../lib/debounce";
 
 function SearchBar(props: SearchBarProps) {
     const searchTerms = props.searchTerms.reverse();
 
+    // Create a memoized debounced version of the search activation
+    const debouncedSearch = useCallback(
+        debounce((value: string) => {
+            if (value.trim()) {
+                props.activateSearch(value);
+            } else if (props.isInSearch) {
+                props.deactivateSearch();
+            }
+        }, 500),
+        [props.activateSearch, props.deactivateSearch, props.isInSearch]
+    );
+
     function handleInputChange(e: SyntheticEvent, v: string, r: AutocompleteInputChangeReason | AutocompleteChangeReason) {
-        console.log(e, v, r);
         if (r === 'input') {
-            props.activateSearch(v);
+            debouncedSearch(v);
         }
         if (r === 'clear') {
             props.deactivateSearch();
         }
         if (r === 'selectOption') {
-            console.log(v);
-            props.activateSearch(v);
+            // No debounce for direct selection - immediate execution
+            if (v.trim()) {
+                props.activateSearch(v);
+            }
         }
     }
 
@@ -38,7 +51,7 @@ function SearchBar(props: SearchBarProps) {
             options={searchTerms}
             sx={{width: 400}}
             renderInput={(params) => <TextField {...params} label="Search"/>}
-            onInputChange={debounce(handleInputChange, 400)}
+            onInputChange={handleInputChange}
             // onClose={handleClose}
             noOptionsText={''}
             onChange={(e, v, r) => handleInputChange(e, v as string, r)}
@@ -47,4 +60,4 @@ function SearchBar(props: SearchBarProps) {
     );
 }
 
-export {SearchBar};
+export { SearchBar };

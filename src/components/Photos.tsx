@@ -14,15 +14,33 @@ const ImageContainer = styled(Paper)(({theme}) => ({
     color: theme.palette.text.secondary,
 }));
 
-
 function Photos(props: PhotosProps) {
     const {photos} = props;
+    const [loadedImages, setLoadedImages] = React.useState<Set<string>>(new Set());
+    const [visibleCount, setVisibleCount] = React.useState(4); // Start with 4 images (1 per column)
+
+    // Create stacks for the masonry layout
     const stacks = [
         photos.filter((_, i: number) => i % 4 === 0),
         photos.filter((_, i: number) => i % 4 === 1),
         photos.filter((_, i: number) => i % 4 === 2),
         photos.filter((_, i: number) => i % 4 === 3),
     ];
+
+    // Handle image load completion
+    const handleImageLoaded = (photoKey: string) => {
+        setLoadedImages(prev => {
+            const newSet = new Set(prev);
+            newSet.add(photoKey);
+            
+            // If all current visible images are loaded, show more
+            if (newSet.size >= visibleCount && visibleCount < photos.length) {
+                // Add 4 more images (1 per column)
+                setTimeout(() => setVisibleCount(prev => prev + 4), 100);
+            }
+            return newSet;
+        });
+    };
 
     return (
         <Box sx={{flexGrow: 1}}>
@@ -32,14 +50,18 @@ function Photos(props: PhotosProps) {
                         <Grid item xs={3} key={`photos-grid-${stackIndex}`}>
                             <Stack spacing={2} key={`photos-stack-${stackIndex}`}>
                                 {images.map((photo: Image, index: number) => {
-                                    // Use photo URL as a fallback for uniqueness 
-                                    // or any unique identifier from the photo
+                                    const globalIndex = index * 4 + stackIndex;
+                                    if (globalIndex >= visibleCount) return null;
+
                                     const photoKey = `photo-${stackIndex}-${index}-${photo.url.small.substring(photo.url.small.lastIndexOf('/') + 1)}`;
                                     return (
                                         <Photo
                                             key={photoKey}
                                             photo={photo}
                                             index={index}
+                                            photoKey={photoKey}
+                                            onLoad={handleImageLoaded}
+                                            isVisible={globalIndex < visibleCount}
                                         />
                                     );
                                 })}
@@ -54,19 +76,36 @@ function Photos(props: PhotosProps) {
 
 export default Photos;
 
-function Photo(props: any) {
+interface PhotoProps {
+    photo: Image;
+    index: number;
+    photoKey: string;
+    onLoad: (photoKey: string) => void;
+    isVisible: boolean;
+}
+
+function Photo(props: PhotoProps) {
     const [open, setOpen] = React.useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
-    const {photo, index} = props;
+    const {photo, photoKey, onLoad, isVisible} = props;
+    
+    const handleImageLoad = () => {
+        onLoad(photoKey);
+    };
+
+    if (!isVisible) return null;
     
     return (
         <ImageContainer>
-            <img src={photo.url.small}
-                 alt={photo.alt}
-                 title={`${photo.title} at ${photo.url.small}`}
-                 style={{width: '100%'}}
-                 onClick={handleOpen}
+            <img 
+                src={photo.url.small}
+                alt={photo.alt}
+                title={`${photo.title} at ${photo.url.small}`}
+                style={{width: '100%'}}
+                onClick={handleOpen}
+                loading="lazy"
+                onLoad={handleImageLoad}
             />
             {open &&
             <Preview

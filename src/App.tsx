@@ -13,6 +13,8 @@ import {CircularProgress} from "@material-ui/core";
 import {CookieConsent} from "./components/CookieConsent";
 import ViewersWarning from "./components/ViewersWarning";
 import {useScroll} from "./lib/scroll.hooks";
+import ErrorBoundary from './components/ErrorBoundary';
+import debounce from 'lodash/debounce';
 
 const defaultState: GlobalAppState = {
     isLoading: true,
@@ -37,6 +39,49 @@ function App() {
     // const photos = photosToImages(initialData.photos.photo);
     const {saveSearchTerm, fetchSearchTerms} = useSearchTerms();
     const {shouldLoadMore, resetTrigger} = useScroll(0.8);
+
+    // Debounced search function
+    const debouncedSearch = useCallback(
+        debounce((searchTerm: string) => {
+            if (!searchTerm) return;
+
+            try {
+                const apiUrl = searchApi(searchTerm);
+                fetch(apiUrl)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return res.json();
+                    })
+                    .then((data: FlickrApiResponse) => {
+                        setAppState(s => ({
+                            ...s,
+                            isLoading: false,
+                            searchPhotos: photosToImages(data.photos.photo),
+                            isInSearch: true,
+                            isInRecent: false
+                        }));
+                    })
+                    .catch(e => {
+                        setAppState(s => ({
+                            ...s,
+                            error: e,
+                            hasError: true,
+                            isLoading: false
+                        }));
+                    });
+            } catch (e) {
+                setAppState(s => ({
+                    ...s,
+                    error: e as Error,
+                    hasError: true,
+                    isLoading: false
+                }));
+            }
+        }, 300),
+        []
+    );
 
     // This function is for subsequent loading during scroll
     const fetchRecentFromNetwork = useCallback((page: number, perPage: number) => {
@@ -137,28 +182,9 @@ function App() {
                 isInRecent: false,
                 currentSearchTerm: searchTerm
             }));
-
-            fetch(searchApi(searchTerm))
-                .then(res => res.json())
-                .then((data: FlickrApiResponse) => {
-                    setAppState(s => ({
-                        ...s,
-                        isLoading: false,
-                        searchPhotos: photosToImages(data.photos.photo),
-                        isInSearch: true,
-                        isInRecent: false
-                    }));
-                })
-                .catch(e => {
-                    setAppState(s => ({
-                        ...s,
-                        error: e,
-                        hasError: true,
-                        isLoading: false
-                    }));
-                });
+            debouncedSearch(searchTerm);
         }
-    }, [saveSearchTerm]);
+    }, [saveSearchTerm, debouncedSearch]);
 
     const deactivateSearch = useCallback(() => {
         setAppState(state => ({
@@ -171,24 +197,34 @@ function App() {
     }, [resetTrigger]);
 
     return (
-        <React.Fragment>
-            <CssBaseline/>
-            <div className="App">
-                <TopBar searchProps={{
-                    isInSearch: appState.isInSearch,
-                    searchTerms: appState.searchTerms,
-                    searchPhotos: appState.searchPhotos,
-                    activateSearch,
-                    deactivateSearch,
-                    currentSearchTerm: appState.currentSearchTerm
-                }}/>
-                <CookieConsent/>
-                <ViewersWarning/>
-                {!appState.isInSearch && appState.isInRecent && <Photos photos={appState.recentPhotos}/>}
-                {appState.isInSearch && !appState.isInRecent && <Photos photos={appState.searchPhotos}/>}
-                {appState.isLoading && <CircularProgress/>}
-            </div>
-        </React.Fragment>
+        <ErrorBoundary>
+            <React.Fragment>
+                <CssBaseline/>
+                <div className="App">
+                    <TopBar searchProps={{
+                        isInSearch: appState.isInSearch,
+                        searchTerms: appState.searchTerms,
+                        searchPhotos: appState.searchPhotos,
+                        activateSearch,
+                        deactivateSearch,
+                        currentSearchTerm: appState.currentSearchTerm
+                    }}/>
+                    <CookieConsent/>
+                    <ViewersWarning/>
+                    {!appState.isInSearch && appState.isInRecent && (
+                        <ErrorBoundary>
+                            <Photos photos={appState.recentPhotos}/>
+                        </ErrorBoundary>
+                    )}
+                    {appState.isInSearch && !appState.isInRecent && (
+                        <ErrorBoundary>
+                            <Photos photos={appState.searchPhotos}/>
+                        </ErrorBoundary>
+                    )}
+                    {appState.isLoading && <CircularProgress/>}
+                </div>
+            </React.Fragment>
+        </ErrorBoundary>
     );
 }
 
