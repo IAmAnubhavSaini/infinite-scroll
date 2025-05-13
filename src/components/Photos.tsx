@@ -16,8 +16,6 @@ const ImageContainer = styled(Paper)(({theme}) => ({
 
 
 function Photos(props: PhotosProps) {
-
-
     const {photos} = props;
     const stacks = [
         photos.filter((_, i: number) => i % 4 === 0),
@@ -25,6 +23,7 @@ function Photos(props: PhotosProps) {
         photos.filter((_, i: number) => i % 4 === 2),
         photos.filter((_, i: number) => i % 4 === 3),
     ];
+
     return (
         <Box sx={{flexGrow: 1}}>
             <Grid container spacing={2}>
@@ -33,8 +32,12 @@ function Photos(props: PhotosProps) {
                         <Grid item xs={3} key={`photos-grid-${stackIndex}`}>
                             <Stack spacing={2} key={`photos-stack-${stackIndex}`}>
                                 {images.map((photo: Image, index: number) => {
+                                    // Use photo URL as a fallback for uniqueness 
+                                    // or any unique identifier from the photo
+                                    const photoKey = `photo-${stackIndex}-${index}-${photo.url.small.substring(photo.url.small.lastIndexOf('/') + 1)}`;
                                     return (
                                         <Photo
+                                            key={photoKey}
                                             photo={photo}
                                             index={index}
                                         />
@@ -45,7 +48,6 @@ function Photos(props: PhotosProps) {
                     );
                 })}
             </Grid>
-
         </Box>
     );
 }
@@ -57,8 +59,9 @@ function Photo(props: any) {
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
     const {photo, index} = props;
+    
     return (
-        <ImageContainer key={`image-container-${index}`}>
+        <ImageContainer>
             <img src={photo.url.small}
                  alt={photo.alt}
                  title={`${photo.title} at ${photo.url.small}`}

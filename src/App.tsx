@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import CssBaseline from '@material-ui/core/CssBaseline';
 // import initialData from './photos.data.json';
 import './styles/App.css';
@@ -32,22 +32,34 @@ const defaultState: GlobalAppState = {
 
 function App() {
     const [appState, setAppState] = useState(defaultState);
+    const isLoadingRef = useRef(false); // Use ref to track loading state without causing rerenders
+    const currentPageRef = useRef(1);
     // const photos = photosToImages(initialData.photos.photo);
     const {saveSearchTerm, fetchSearchTerms} = useSearchTerms();
-    const {scrollTop} = useScroll();
+    const {shouldLoadMore, resetTrigger} = useScroll(0.8);
 
-    function fetchRecentFromNetwork(page: number, perPage: number) {
+    // This function is for subsequent loading during scroll
+    const fetchRecentFromNetwork = useCallback((page: number, perPage: number) => {
+        // Skip if already loading to prevent multiple simultaneous requests
+        if (isLoadingRef.current) return; 
+        
+        isLoadingRef.current = true;
+        setAppState(s => ({...s, isLoading: true}));
+        
         fetch(recentApi(page, perPage))
             .then(res => res.json())
             .then((data: FlickrApiResponse) => {
+                currentPageRef.current = page + 1;
                 setAppState(s => ({
                     ...s,
                     isLoading: false,
-                    recentPhotos: [...appState.recentPhotos, ...photosToImages(data.photos.photo)],
+                    recentPhotos: [...s.recentPhotos, ...photosToImages(data.photos.photo)],
                     isInSearch: false,
                     isInRecent: true,
-                    page: page + 1
+                    page: currentPageRef.current
                 }));
+                isLoadingRef.current = false;
+                resetTrigger(); // Reset the scroll trigger after loading more content
             })
             .catch(e => {
                 setAppState(s => ({
@@ -56,27 +68,66 @@ function App() {
                     hasError: true,
                     isLoading: false,
                 }));
+                isLoadingRef.current = false;
             });
-    }
+    }, [resetTrigger]); // Removed appState.isLoading from deps
 
-    useEffect(() => {
-        // This effect fires only once, when we load due to empty dependency list.
-        fetchRecentFromNetwork(appState.page, appState.perPage);
-        setAppState(state => ({...state, searchTerms: fetchSearchTerms() || []}));
-    }, []);
+    // This function is for the initial load - doesn't have the loading check
+    const initialFetchFromNetwork = useCallback((page: number, perPage: number) => {
+        if (isLoadingRef.current) return;
+        
+        isLoadingRef.current = true;
+        setAppState(s => ({...s, isLoading: true}));
+        
+        fetch(recentApi(page, perPage))
+            .then(res => res.json())
+            .then((data: FlickrApiResponse) => {
+                currentPageRef.current = page + 1;
+                setAppState(s => ({
+                    ...s,
+                    isLoading: false,
+                    recentPhotos: [...s.recentPhotos, ...photosToImages(data.photos.photo)],
+                    isInSearch: false,
+                    isInRecent: true,
+                    page: currentPageRef.current
+                }));
+                isLoadingRef.current = false;
+                resetTrigger();
+            })
+            .catch(e => {
+                setAppState(s => ({
+                    ...s,
+                    error: e,
+                    hasError: true,
+                    isLoading: false,
+                }));
+                isLoadingRef.current = false;
+            });
+    }, [resetTrigger]);
 
+    // Effect for initial load - runs only once
     useEffect(() => {
-        const st = fetchSearchTerms() || [];
-        setAppState(state => ({...state, searchTerms: st}));
-    }, [appState.isInSearch]);
+        initialFetchFromNetwork(1, appState.perPage);
+        const searchTerms = fetchSearchTerms() || [];
+        setAppState(state => ({...state, searchTerms}));
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Effect to update search terms
     useEffect(() => {
-        if (appState.isInRecent) {
-            fetchRecentFromNetwork(appState.page, appState.perPage);
+        if (appState.isInSearch) {
+            const st = fetchSearchTerms() || [];
+            setAppState(state => ({...state, searchTerms: st}));
         }
-    }, [scrollTop]);
+    }, [appState.isInSearch, fetchSearchTerms]);
 
-    function activateSearch(searchTerm: string) {
+    // Effect to handle infinite scroll
+    useEffect(() => {
+        if (shouldLoadMore && appState.isInRecent && !isLoadingRef.current) {
+            fetchRecentFromNetwork(currentPageRef.current, appState.perPage);
+        }
+    }, [shouldLoadMore, appState.isInRecent, appState.perPage, fetchRecentFromNetwork]);
+
+    const activateSearch = useCallback((searchTerm: string) => {
         if (searchTerm) {
             saveSearchTerm(searchTerm);
             setAppState(state => ({
@@ -90,7 +141,6 @@ function App() {
             fetch(searchApi(searchTerm))
                 .then(res => res.json())
                 .then((data: FlickrApiResponse) => {
-                    console.log(data);
                     setAppState(s => ({
                         ...s,
                         isLoading: false,
@@ -108,11 +158,17 @@ function App() {
                     }));
                 });
         }
-    }
+    }, [saveSearchTerm]);
 
-    function deactivateSearch() {
-        setAppState(state => ({...state, isInSearch: false, isInRecent: true}));
-    }
+    const deactivateSearch = useCallback(() => {
+        setAppState(state => ({
+            ...state, 
+            isInSearch: false, 
+            isInRecent: true
+        }));
+        // Reset the scroll trigger when switching back to recent view
+        resetTrigger();
+    }, [resetTrigger]);
 
     return (
         <React.Fragment>
